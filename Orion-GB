@@ -1946,49 +1946,6 @@ function OrionLib:MakeWindow(WindowConfig)
 	return TabFunction
 end   
 
-local function AddToggle()
-if gethui():FindFirstChild("Orion") and game.Players.LocalPlayer.PlayerGui:FindFirstChild("ToggleUi") == nil then
-local TOGGLE = {}
-TOGGLE["Ui"] = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-TOGGLE["DaIcon"] = Instance.new("ImageButton", TOGGLE["Ui"])
-TOGGLE["das"] = Instance.new("UICorner", TOGGLE["DaIcon"])
-TOGGLE["Ui"].Name = "ToggleUi"
-TOGGLE["Ui"].ResetOnSpawn = false
-TOGGLE["DaIcon"].Size = UDim2.new(0,45,0,45)
-TOGGLE["DaIcon"].Position = UDim2.new(0,100,0,60)
-TOGGLE["DaIcon"].Draggable = true
-TOGGLE["DaIcon"].Image = "rbxassetid://7072719338"
-TOGGLE["DaIcon"].BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-TOGGLE["DaIcon"].BorderColor3 = Color3.fromRGB(255, 186, 117)
-TOGGLE["DaIcon"].MouseButton1Click:Connect(function()
-if gethui():FindFirstChild("Orion") then
-for i,v in pairs(gethui():GetChildren()) do
-if v.Name == "Orion" then
-TOGGLE["DaIcon"].Image = ("rbxassetid://7072720870") or "rbxassetid://7072719338"
-if MainWindow.Visible == true then
-MainWindow.Visible = false
-else
-MainWindow.Visible = true
-end
-end
-end
-end
-end)
-TOGGLE["das"]["CornerRadius"] = UDim.new(0.20000000298023224, 0)
-end
-if gethui():FindFirstChild("Orion") then
-for _, i in pairs(gethui():GetChildren()) do
-if i.Name == "Orion" then
-for i,v in pairs(i:GetDescendants()) do
-if v.ClassName == "Frame" and v.BackgroundTransparency < 0.3 then
-v.BackgroundTransparency = 0.2
-end
-end
-end
-end
-end
-end
-
 function OrionLib:Destroy()
 	Orion:Destroy()
 end
