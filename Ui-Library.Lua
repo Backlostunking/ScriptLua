@@ -1,4 +1,3 @@
--- UI Library Module
 local UILibrary = {}
 
 -- Create a ScreenGui
@@ -12,17 +11,15 @@ function UILibrary:CreateScreenGui(name, parent)
 end
 
 -- Create a Frame
-function UILibrary:CreateFrame(parent, size, position, color, cornerRadius)
+function UILibrary:CreateFrame(parent, color, cornerRadius)
     local Frame = Instance.new("Frame")
-    Frame.Size = size or UDim2.new(0.3, 0, 0.5, 0)
-    Frame.Position = position or UDim2.new(0.35, 0, 0.25, 0)
-    Frame.BackgroundColor3 = color or Color3.fromRGB(15, 15, 15)
+    Frame.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)  -- Default color
     Frame.BorderSizePixel = 0
     Frame.Parent = parent
 
     if cornerRadius then
         local UICorner = Instance.new("UICorner", Frame)
-        UICorner.CornerRadius = cornerRadius or UDim.new(0, 10)
+        UICorner.CornerRadius = cornerRadius or UDim.new(0, 12)  -- Default corner radius
     end
 
     return Frame
@@ -57,34 +54,30 @@ function UILibrary:MakeDraggable(frame, dragHandle)
 end
 
 -- Create a Text Label
-function UILibrary:CreateLabel(parent, text, size, position, color)
+function UILibrary:CreateLabel(parent, text, color)
     local Label = Instance.new("TextLabel")
-    Label.Size = size or UDim2.new(1, 0, 0.1, 0)
-    Label.Position = position or UDim2.new(0, 0, 0, 0)
-    Label.BackgroundTransparency = 1
     Label.Text = text or "Label"
-    Label.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+    Label.TextColor3 = color or Color3.fromRGB(255, 255, 255)  -- Default text color
     Label.Font = Enum.Font.SourceSansBold
-    Label.TextSize = 18
+    Label.TextSize = 20
+    Label.BackgroundTransparency = 1
     Label.Parent = parent
 
     return Label
 end
 
 -- Create a Button
-function UILibrary:CreateButton(parent, text, size, position, color, onClick)
+function UILibrary:CreateButton(parent, text, color, onClick)
     local Button = Instance.new("TextButton")
-    Button.Size = size or UDim2.new(0.2, 0, 0.1, 0)
-    Button.Position = position or UDim2.new(0, 0, 0.1, 0)
-    Button.BackgroundColor3 = color or Color3.fromRGB(25, 25, 25)
+    Button.BackgroundColor3 = color or Color3.fromRGB(50, 50, 50)  -- Default button color
     Button.Text = text or "Button"
     Button.TextColor3 = Color3.fromRGB(255, 255, 255)
     Button.Font = Enum.Font.SourceSansBold
-    Button.TextSize = 16
+    Button.TextSize = 18
     Button.Parent = parent
 
     local UICorner = Instance.new("UICorner", Button)
-    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.CornerRadius = UDim.new(0, 8)
 
     Button.MouseButton1Click:Connect(function()
         if onClick then
@@ -96,11 +89,9 @@ function UILibrary:CreateButton(parent, text, size, position, color, onClick)
 end
 
 -- Create a Toggle Button
-function UILibrary:CreateToggle(parent, text, size, position, color, defaultState, onToggle)
+function UILibrary:CreateToggle(parent, text, color, defaultState, onToggle)
     local ToggleButton = Instance.new("TextButton")
-    ToggleButton.Size = size or UDim2.new(0.3, 0, 0.1, 0)
-    ToggleButton.Position = position or UDim2.new(0, 0, 0.3, 0)
-    ToggleButton.BackgroundColor3 = color or Color3.fromRGB(25, 25, 25)
+    ToggleButton.BackgroundColor3 = color or Color3.fromRGB(50, 50, 50)  -- Default toggle color
     ToggleButton.Text = text or "Toggle"
     ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     ToggleButton.Font = Enum.Font.SourceSansBold
@@ -108,7 +99,7 @@ function UILibrary:CreateToggle(parent, text, size, position, color, defaultStat
     ToggleButton.Parent = parent
 
     local UICorner = Instance.new("UICorner", ToggleButton)
-    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.CornerRadius = UDim.new(0, 8)
 
     local toggleState = defaultState or false -- Initial state
     local function updateState()
@@ -126,13 +117,11 @@ function UILibrary:CreateToggle(parent, text, size, position, color, defaultStat
 end
 
 -- Create a TextBox
-function UILibrary:CreateTextBox(parent, placeholder, size, position, color, onSubmit)
+function UILibrary:CreateTextBox(parent, placeholder, color, onSubmit)
     local TextBox = Instance.new("TextBox")
-    TextBox.Size = size or UDim2.new(0.9, 0, 0.1, 0)
-    TextBox.Position = position or UDim2.new(0.05, 0, 0.8, 0)
     TextBox.PlaceholderText = placeholder or "Type here..."
     TextBox.Text = ""
-    TextBox.BackgroundColor3 = color or Color3.fromRGB(50, 50, 50)
+    TextBox.BackgroundColor3 = color or Color3.fromRGB(60, 60, 60)
     TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     TextBox.Font = Enum.Font.SourceSans
     TextBox.TextSize = 18
@@ -149,6 +138,23 @@ function UILibrary:CreateTextBox(parent, placeholder, size, position, color, onS
     end)
 
     return TextBox
+end
+
+-- Create a Tab
+function UILibrary:CreateTab(parent, tabName, color)
+    local Tab = Instance.new("Frame")
+    Tab.BackgroundColor3 = color or Color3.fromRGB(40, 40, 40)  -- Default tab color
+    Tab.BorderSizePixel = 0
+    Tab.Parent = parent
+
+    local TabLabel = UILibrary:CreateLabel(Tab, tabName, Color3.fromRGB(255, 255, 255))
+
+    -- Add a button to the tab
+    local AddButton = UILibrary:CreateButton(Tab, "Add Button", Color3.fromRGB(70, 70, 70), function()
+        print(tabName .. " Add Button clicked!")
+    end)
+
+    return Tab
 end
 
 -- Animation: Fade In
