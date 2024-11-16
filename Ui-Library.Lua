@@ -1,93 +1,146 @@
--- Initialize the library
-local UILibrary = {}
+-- Pro-Level GUI Library by lua god
+local ProGuiLibrary = {}
 
--- Create GUI
-function UILibrary:CreateGui(title)
+-- Create a Screen GUI
+function ProGuiLibrary:CreateGui(title)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = title
 
-    -- Parent it to CoreGui (executor-compatible)
+    -- Parent it to CoreGui (executor compatibility)
     if syn and syn.protect_gui then
-        syn.protect_gui(ScreenGui) -- Synapse GUI protection
+        syn.protect_gui(ScreenGui)
     end
     ScreenGui.Parent = game.CoreGui
 
     return ScreenGui
 end
 
--- Create Tab System
-function UILibrary:CreateTabSystem(parent)
-    local TabSystem = Instance.new("Frame")
-    TabSystem.Name = "TabSystem"
-    TabSystem.Parent = parent
-    TabSystem.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-    TabSystem.Size = UDim2.new(0, 300, 0, 50)
-    TabSystem.Position = UDim2.new(0, 10, 0, 10)
-    TabSystem.Active = true -- Allow dragging
-    TabSystem.Draggable = true -- For desktop & mobile
+-- Create a Draggable Frame
+function ProGuiLibrary:CreateMainFrame(parent, title)
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = parent
+    MainFrame.Size = UDim2.new(0, 400, 0, 300)
+    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainFrame.Active = true
+    MainFrame.Draggable = true -- Draggable for desktop and mobile!
 
-    return TabSystem
+    -- Add smooth round corners
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = MainFrame
+
+    -- Add Title Bar
+    local TitleBar = Instance.new("TextLabel")
+    TitleBar.Name = "TitleBar"
+    TitleBar.Text = title
+    TitleBar.Font = Enum.Font.GothamBold
+    TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.Parent = MainFrame
+
+    local UICornerBar = Instance.new("UICorner")
+    UICornerBar.CornerRadius = UDim.new(0, 10)
+    UICornerBar.Parent = TitleBar
+
+    return MainFrame
 end
 
--- Add a Tab
-function UILibrary:AddTab(tabSystem, tabName)
-    local Tab = Instance.new("TextButton")
-    Tab.Name = tabName
-    Tab.Text = tabName
-    Tab.Size = UDim2.new(0, 100, 0, 50)
-    Tab.Parent = tabSystem
-    Tab.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-    return Tab
+-- Create Tabs Section
+function ProGuiLibrary:CreateTabSystem(parent)
+    local TabFrame = Instance.new("Frame")
+    TabFrame.Name = "TabFrame"
+    TabFrame.Parent = parent
+    TabFrame.Size = UDim2.new(0, 100, 1, -30)
+    TabFrame.Position = UDim2.new(0, 0, 0, 30)
+    TabFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    TabFrame.BorderSizePixel = 0
+
+    -- Add round corners
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = TabFrame
+
+    return TabFrame
 end
 
--- Add a Button
-function UILibrary:AddButton(parent, text, callback)
+-- Add Tab Button
+function ProGuiLibrary:AddTab(tabFrame, tabName, onClick)
+    local TabButton = Instance.new("TextButton")
+    TabButton.Name = tabName
+    TabButton.Text = tabName
+    TabButton.Font = Enum.Font.GothamBold
+    TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    TabButton.Size = UDim2.new(1, 0, 0, 40)
+    TabButton.Parent = tabFrame
+
+    -- Add round corners
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 5)
+    UICorner.Parent = TabButton
+
+    -- Hover effect
+    TabButton.MouseEnter:Connect(function()
+        TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+    TabButton.MouseLeave:Connect(function()
+        TabButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    end)
+
+    TabButton.MouseButton1Click:Connect(onClick)
+
+    return TabButton
+end
+
+-- Create Content Area
+function ProGuiLibrary:CreateContentArea(parent)
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Name = "ContentArea"
+    ContentArea.Parent = parent
+    ContentArea.Size = UDim2.new(1, -100, 1, -30)
+    ContentArea.Position = UDim2.new(0, 100, 0, 30)
+    ContentArea.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    ContentArea.BorderSizePixel = 0
+
+    -- Add smooth round corners
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = ContentArea
+
+    return ContentArea
+end
+
+-- Add a Button to Content Area
+function ProGuiLibrary:AddButton(parent, text, callback)
     local Button = Instance.new("TextButton")
     Button.Text = text
+    Button.Font = Enum.Font.GothamBold
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Button.Size = UDim2.new(0, 200, 0, 50)
-    Button.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
     Button.Parent = parent
 
-    Button.MouseButton1Click:Connect(function()
-        callback()
+    -- Add hover effects
+    Button.MouseEnter:Connect(function()
+        Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     end)
+    Button.MouseLeave:Connect(function()
+        Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+
+    Button.MouseButton1Click:Connect(callback)
+
+    -- Add round corners
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 5)
+    UICorner.Parent = Button
 
     return Button
 end
 
--- Add a Toggle
-function UILibrary:AddToggle(parent, text, default, callback)
-    local Toggle = Instance.new("TextButton")
-    Toggle.Text = text .. (default and " [ON]" or " [OFF]")
-    Toggle.Size = UDim2.new(0, 200, 0, 50)
-    Toggle.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
-    Toggle.Parent = parent
-
-    local state = default
-    Toggle.MouseButton1Click:Connect(function()
-        state = not state
-        Toggle.Text = text .. (state and " [ON]" or " [OFF]")
-        callback(state)
-    end)
-
-    return Toggle
-end
-
--- Add Dropdown
-function UILibrary:AddDropdown(parent, text, options, callback)
-    local Dropdown = Instance.new("TextButton")
-    Dropdown.Text = text .. " (Click to Select)"
-    Dropdown.Size = UDim2.new(0, 200, 0, 50)
-    Dropdown.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
-    Dropdown.Parent = parent
-
-    Dropdown.MouseButton1Click:Connect(function()
-        local option = options[math.random(1, #options)] -- Randomly select for now
-        Dropdown.Text = text .. ": " .. option
-        callback(option)
-    end)
-
-    return Dropdown
-end
-
-return UILibrary
+return ProGuiLibrary
