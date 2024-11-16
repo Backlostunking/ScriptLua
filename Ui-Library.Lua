@@ -12,9 +12,14 @@ UILibrary.Theme = {
 
 -- Create a new ScreenGui
 function UILibrary:CreateGui(title)
+    local playerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then
+        error("PlayerGui not found. Make sure to run in a proper environment.")
+    end
+
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = title
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    screenGui.Parent = playerGui
     return screenGui
 end
 
@@ -66,7 +71,15 @@ end
 function UILibrary:AddWidget(container, widgetType, properties)
     local widget = Instance.new(widgetType)
     widget.Size = UDim2.new(1, -10, 0, 40)
-    widget.Position = UDim2.new(0, 5, 0, (#container:GetChildren() - 1) * 45) -- Auto position
+
+    local widgetCount = 0
+    for _, child in ipairs(container:GetChildren()) do
+        if child:IsA("Frame") or child:IsA("TextButton") then
+            widgetCount += 1
+        end
+    end
+
+    widget.Position = UDim2.new(0, 5, 0, (widgetCount) * 45) -- Auto position
     widget.BackgroundColor3 = UILibrary.Theme.Button
     widget.TextColor3 = UILibrary.Theme.Text
     widget.Font = Enum.Font.SourceSans
@@ -155,6 +168,11 @@ function UILibrary:AddDropdown(container, text, options, callback)
     end
 
     dropdown.MouseButton1Click:Connect(function()
+        for _, sibling in ipairs(container:GetChildren()) do
+            if sibling:IsA("Frame") and sibling:FindFirstChild("dropdownList") then
+                sibling.dropdownList.Visible = false
+            end
+        end
         dropdownList.Visible = not dropdownList.Visible
     end)
 
