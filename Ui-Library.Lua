@@ -1,182 +1,77 @@
+-- Initialize the library
 local UILibrary = {}
 
--- Theme settings
-UILibrary.Theme = {
-    Background = Color3.fromRGB(30, 30, 30),
-    Text = Color3.fromRGB(255, 255, 255),
-    Button = Color3.fromRGB(50, 50, 50),
-    ToggleOn = Color3.fromRGB(0, 200, 0),
-    ToggleOff = Color3.fromRGB(200, 0, 0),
-    Dropdown = Color3.fromRGB(70, 70, 70),
-}
-
--- Create a new ScreenGui
+-- Create GUI
 function UILibrary:CreateGui(title)
-    local playerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if not playerGui then
-        error("PlayerGui not found. Make sure to run in a proper environment.")
-    end
-
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = title
-    screenGui.Parent = playerGui
-    return screenGui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = title
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    return ScreenGui
 end
 
--- Create a new tab system
+-- Create Tab System
 function UILibrary:CreateTabSystem(parent)
-    local tabSystem = Instance.new("Frame")
-    tabSystem.Size = UDim2.new(1, 0, 1, 0)
-    tabSystem.BackgroundTransparency = 1
-    tabSystem.Parent = parent
-
-    local tabs = {}
-    local tabButtons = {}
-    local currentTab = nil
-
-    -- Create a tab
-    function tabSystem:AddTab(tabName)
-        local tabFrame = Instance.new("Frame")
-        tabFrame.Size = UDim2.new(1, 0, 1, -30) -- Exclude space for buttons
-        tabFrame.Position = UDim2.new(0, 0, 0, 30)
-        tabFrame.BackgroundTransparency = 1
-        tabFrame.Visible = #tabs == 0 -- Show the first tab by default
-        tabFrame.Parent = tabSystem
-
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0, 100, 0, 30)
-        button.Position = UDim2.new(0, (#tabButtons * 100), 0, 0)
-        button.BackgroundColor3 = UILibrary.Theme.Button
-        button.Text = tabName
-        button.TextColor3 = UILibrary.Theme.Text
-        button.Parent = tabSystem
-
-        button.MouseButton1Click:Connect(function()
-            if currentTab then
-                currentTab.Visible = false
-            end
-            tabFrame.Visible = true
-            currentTab = tabFrame
-        end)
-
-        table.insert(tabs, tabFrame)
-        table.insert(tabButtons, button)
-        return tabFrame
-    end
-
-    return tabSystem
+    local TabSystem = Instance.new("Frame")
+    TabSystem.Name = "TabSystem"
+    TabSystem.Parent = parent
+    TabSystem.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    TabSystem.Size = UDim2.new(0, 300, 0, 50)
+    TabSystem.Position = UDim2.new(0, 10, 0, 10)
+    return TabSystem
 end
 
--- Add widgets with auto positioning
-function UILibrary:AddWidget(container, widgetType, properties)
-    local widget = Instance.new(widgetType)
-    widget.Size = UDim2.new(1, -10, 0, 40)
-
-    local widgetCount = 0
-    for _, child in ipairs(container:GetChildren()) do
-        if child:IsA("Frame") or child:IsA("TextButton") then
-            widgetCount += 1
-        end
-    end
-
-    widget.Position = UDim2.new(0, 5, 0, (widgetCount) * 45) -- Auto position
-    widget.BackgroundColor3 = UILibrary.Theme.Button
-    widget.TextColor3 = UILibrary.Theme.Text
-    widget.Font = Enum.Font.SourceSans
-    widget.TextSize = 18
-    for prop, value in pairs(properties or {}) do
-        widget[prop] = value
-    end
-    widget.Parent = container
-
-    return widget
+-- Add a Tab
+function UILibrary:AddTab(tabSystem, tabName)
+    local Tab = Instance.new("TextButton")
+    Tab.Name = tabName
+    Tab.Text = tabName
+    Tab.Size = UDim2.new(0, 100, 0, 50)
+    Tab.Parent = tabSystem
+    Tab.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    return Tab
 end
 
--- Add a toggle
-function UILibrary:AddToggle(container, text, defaultState, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 40)
-    frame.Position = UDim2.new(0, 5, 0, (#container:GetChildren() - 1) * 45)
-    frame.BackgroundTransparency = 1
-    frame.Parent = container
+-- Add a Widget
+function UILibrary:AddWidget(parent, widgetType, properties)
+    local Widget = Instance.new(widgetType)
+    for prop, value in pairs(properties) do
+        Widget[prop] = value
+    end
+    Widget.Parent = parent
+    return Widget
+end
 
-    local toggleButton = Instance.new("TextButton")
-    toggleButton.Size = UDim2.new(0, 40, 0, 40)
-    toggleButton.BackgroundColor3 = defaultState and UILibrary.Theme.ToggleOn or UILibrary.Theme.ToggleOff
-    toggleButton.Text = ""
-    toggleButton.Parent = frame
+-- Add a Toggle
+function UILibrary:AddToggle(parent, text, default, callback)
+    local Toggle = Instance.new("TextButton")
+    Toggle.Text = text .. (default and " [ON]" or " [OFF]")
+    Toggle.Size = UDim2.new(0, 200, 0, 50)
+    Toggle.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    Toggle.Parent = parent
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -50, 1, 0)
-    label.Position = UDim2.new(0, 50, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = UILibrary.Theme.Text
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 18
-    label.Parent = frame
-
-    toggleButton.MouseButton1Click:Connect(function()
-        defaultState = not defaultState
-        toggleButton.BackgroundColor3 = defaultState and UILibrary.Theme.ToggleOn or UILibrary.Theme.ToggleOff
-        callback(defaultState)
+    local state = default
+    Toggle.MouseButton1Click:Connect(function()
+        state = not state
+        Toggle.Text = text .. (state and " [ON]" or " [OFF]")
+        callback(state)
     end)
-
-    return frame
+    return Toggle
 end
 
--- Add a dropdown
-function UILibrary:AddDropdown(container, text, options, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -10, 0, 40)
-    frame.Position = UDim2.new(0, 5, 0, (#container:GetChildren() - 1) * 45)
-    frame.BackgroundTransparency = 1
-    frame.Parent = container
+-- Add Dropdown
+function UILibrary:AddDropdown(parent, text, options, callback)
+    local Dropdown = Instance.new("TextButton")
+    Dropdown.Text = text .. " (Click to Select)"
+    Dropdown.Size = UDim2.new(0, 200, 0, 50)
+    Dropdown.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    Dropdown.Parent = parent
 
-    local dropdown = Instance.new("TextButton")
-    dropdown.Size = UDim2.new(0, 200, 0, 40)
-    dropdown.BackgroundColor3 = UILibrary.Theme.Dropdown
-    dropdown.Text = text
-    dropdown.TextColor3 = UILibrary.Theme.Text
-    dropdown.Font = Enum.Font.SourceSans
-    dropdown.TextSize = 18
-    dropdown.Parent = frame
-
-    local dropdownList = Instance.new("Frame")
-    dropdownList.Size = UDim2.new(0, 200, 0, #options * 30)
-    dropdownList.Position = UDim2.new(0, 0, 1, 0)
-    dropdownList.BackgroundColor3 = UILibrary.Theme.Dropdown
-    dropdownList.Visible = false
-    dropdownList.Parent = frame
-
-    for i, option in ipairs(options) do
-        local optionButton = Instance.new("TextButton")
-        optionButton.Size = UDim2.new(1, 0, 0, 30)
-        optionButton.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
-        optionButton.BackgroundTransparency = 1
-        optionButton.Text = option
-        optionButton.TextColor3 = UILibrary.Theme.Text
-        optionButton.Font = Enum.Font.SourceSans
-        optionButton.TextSize = 18
-        optionButton.Parent = dropdownList
-
-        optionButton.MouseButton1Click:Connect(function()
-            dropdown.Text = text .. ": " .. option
-            dropdownList.Visible = false
-            callback(option)
-        end)
-    end
-
-    dropdown.MouseButton1Click:Connect(function()
-        for _, sibling in ipairs(container:GetChildren()) do
-            if sibling:IsA("Frame") and sibling:FindFirstChild("dropdownList") then
-                sibling.dropdownList.Visible = false
-            end
-        end
-        dropdownList.Visible = not dropdownList.Visible
+    Dropdown.MouseButton1Click:Connect(function()
+        local option = options[math.random(1, #options)] -- Randomly select for now
+        Dropdown.Text = text .. ": " .. option
+        callback(option)
     end)
-
-    return frame
+    return Dropdown
 end
 
 return UILibrary
