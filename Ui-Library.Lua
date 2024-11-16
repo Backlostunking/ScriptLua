@@ -28,30 +28,46 @@ function UILibrary:CreateFrame(parent, size, position, color, cornerRadius)
     return Frame
 end
 
--- Make Frame Draggable (Mobile + PC Support)
+-- Make Frame Draggable (with Mobile Support)
 function UILibrary:MakeDraggable(frame, dragHandle)
     local UIS = game:GetService("UserInputService")
-    local dragging, dragStart, startPos
+    local dragging = false
+    local dragStart, startPos
 
     dragHandle = dragHandle or frame
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
 
     dragHandle.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            update(input)
         end
     end)
 
-    dragHandle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+    UIS.InputChanged:Connect(function(input)
+        if dragging and input == dragHandle then
+            update(input)
         end
     end)
 end
