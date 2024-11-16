@@ -5,7 +5,13 @@ local UILibrary = {}
 function UILibrary:CreateGui(title)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = title
-    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    -- Parent it to CoreGui (executor-compatible)
+    if syn and syn.protect_gui then
+        syn.protect_gui(ScreenGui) -- Synapse GUI protection
+    end
+    ScreenGui.Parent = game.CoreGui
+
     return ScreenGui
 end
 
@@ -17,6 +23,9 @@ function UILibrary:CreateTabSystem(parent)
     TabSystem.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
     TabSystem.Size = UDim2.new(0, 300, 0, 50)
     TabSystem.Position = UDim2.new(0, 10, 0, 10)
+    TabSystem.Active = true -- Allow dragging
+    TabSystem.Draggable = true -- For desktop & mobile
+
     return TabSystem
 end
 
@@ -31,14 +40,19 @@ function UILibrary:AddTab(tabSystem, tabName)
     return Tab
 end
 
--- Add a Widget
-function UILibrary:AddWidget(parent, widgetType, properties)
-    local Widget = Instance.new(widgetType)
-    for prop, value in pairs(properties) do
-        Widget[prop] = value
-    end
-    Widget.Parent = parent
-    return Widget
+-- Add a Button
+function UILibrary:AddButton(parent, text, callback)
+    local Button = Instance.new("TextButton")
+    Button.Text = text
+    Button.Size = UDim2.new(0, 200, 0, 50)
+    Button.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    Button.Parent = parent
+
+    Button.MouseButton1Click:Connect(function()
+        callback()
+    end)
+
+    return Button
 end
 
 -- Add a Toggle
@@ -55,6 +69,7 @@ function UILibrary:AddToggle(parent, text, default, callback)
         Toggle.Text = text .. (state and " [ON]" or " [OFF]")
         callback(state)
     end)
+
     return Toggle
 end
 
@@ -71,6 +86,7 @@ function UILibrary:AddDropdown(parent, text, options, callback)
         Dropdown.Text = text .. ": " .. option
         callback(option)
     end)
+
     return Dropdown
 end
 
