@@ -1,50 +1,84 @@
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
+local Players = game:GetService("Players")
 
-local Player = game:GetService("Players").LocalPlayer
+local Player = Players.LocalPlayer
 
--- Create ScreenGui
+-- Screen GUI
 local NotifGui = Instance.new("ScreenGui")
-NotifGui.Name = "Notif"
+NotifGui.Name = "UnNotifTrue"
 NotifGui.Parent = RunService:IsStudio() and Player.PlayerGui or game:GetService("CoreGui")
 
--- Container for Notifications
+-- Notification Container
 local Container = Instance.new("Frame")
 Container.Name = "Container"
 Container.Position = UDim2.new(0, 20, 0.5, -20)
-Container.Size = UDim2.new(0, 350, 0.5, 0)
+Container.Size = UDim2.new(0, 400, 0.5, 0)
 Container.BackgroundTransparency = 1
 Container.Parent = NotifGui
 
 -- Constants
 local Padding = 10
-local CachedObjects = {}
 local TweenTime = 0.3
 local TweenStyle = Enum.EasingStyle.Quint
 local TweenDirection = Enum.EasingDirection.Out
+local NotificationList = {}
 
--- Utility Functions
+-- Function to calculate stacked notification bounds
 local function CalculateBounds()
-    local X, Y = 0, 0
-    for _, Object in ipairs(CachedObjects) do
-        X += Object.AbsoluteSize.X
-        Y += Object.AbsoluteSize.Y
+    local TotalHeight = 0
+    for _, Notification in pairs(NotificationList) do
+        TotalHeight += Notification.AbsoluteSize.Y + Padding
     end
-    return {X = X, Y = Y}
+    return TotalHeight
 end
 
-local function Round2px()
-    local Frame = Instance.new("Frame")
-    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 45)
-    Frame.ClipsDescendants = true
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = Frame
-    return Frame
+-- Animate Notifications
+local function AnimateNotifications()
+    local CurrentY = 0
+    for _, Notification in ipairs(NotificationList) do
+        local Tween = TweenService:Create(Notification, TweenInfo.new(TweenTime, TweenStyle, TweenDirection), {
+            Position = UDim2.new(0, Padding, 0, CurrentY + Padding)
+        })
+        Tween:Play()
+        CurrentY += Notification.AbsoluteSize.Y + Padding
+    end
 end
 
-local function Shadow2px()
+-- Fade-out Animation
+local function FadeOutNotification(Notification)
+    local Tween = TweenService:Create(Notification, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 1
+    })
+    Tween:Play()
+
+    for _, Descendant in pairs(Notification:GetDescendants()) do
+        if Descendant:IsA("TextLabel") or Descendant:IsA("ImageLabel") then
+            TweenService:Create(Descendant, TweenInfo.new(0.5), {TextTransparency = 1, ImageTransparency = 1}):Play()
+        end
+    end
+
+    Tween.Completed:Wait()
+    Notification:Destroy()
+end
+
+-- Function to Create Notification
+local function CreateNotification(Title, Description, Duration)
+    -- Notification Frame
+    local NotificationFrame = Instance.new("Frame")
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 50)
+    NotificationFrame.Size = UDim2.new(0, 400, 0, 80)
+    NotificationFrame.Position = UDim2.new(-1, 0, 0, 0)
+    NotificationFrame.Parent = Container
+    NotificationFrame.ClipsDescendants = true
+
+    -- Add Corner Radius
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = NotificationFrame
+
+    -- Shadow Effect
     local Shadow = Instance.new("ImageLabel")
     Shadow.Image = "rbxassetid://5761498316"
     Shadow.ScaleType = Enum.ScaleType.Slice
@@ -52,99 +86,56 @@ local function Shadow2px()
     Shadow.Size = UDim2.new(1, 20, 1, 20)
     Shadow.Position = UDim2.new(0, -10, 0, -10)
     Shadow.BackgroundTransparency = 1
-    Shadow.ImageTransparency = 0.5
     Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    return Shadow
-end
+    Shadow.ImageTransparency = 0.7
+    Shadow.Parent = NotificationFrame
 
-local function TitleLabel(Text)
-    local Title = Instance.new("TextLabel")
-    Title.Text = Text
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.BackgroundTransparency = 1
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    return Title
-end
+    -- Title Label
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Text = Title
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextSize = 18
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Size = UDim2.new(1, -20, 0, 30)
+    TitleLabel.Position = UDim2.fromOffset(10, 10)
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = NotificationFrame
 
-local function DescriptionLabel(Text)
-    local Desc = Instance.new("TextLabel")
-    Desc.Text = Text
-    Desc.Font = Enum.Font.Gotham
-    Desc.TextSize = 14
-    Desc.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Desc.BackgroundTransparency = 1
-    Desc.TextXAlignment = Enum.TextXAlignment.Left
-    Desc.TextWrapped = true
-    return Desc
-end
+    -- Description Label
+    local DescriptionLabel = Instance.new("TextLabel")
+    DescriptionLabel.Text = Description
+    DescriptionLabel.Font = Enum.Font.Gotham
+    DescriptionLabel.TextSize = 14
+    DescriptionLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    DescriptionLabel.BackgroundTransparency = 1
+    DescriptionLabel.Size = UDim2.new(1, -20, 0, 40)
+    DescriptionLabel.Position = UDim2.fromOffset(10, 40)
+    DescriptionLabel.TextWrapped = true
+    DescriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DescriptionLabel.TextYAlignment = Enum.TextYAlignment.Top
+    DescriptionLabel.Parent = NotificationFrame
 
--- Fade-Out Effect
-local function FadeOutAfter(Object, Duration)
-    wait(Duration)
-    local Tween = TweenService:Create(Object, TweenInfo.new(0.5, TweenStyle, TweenDirection), {
-        BackgroundTransparency = 1
-    })
-    Tween:Play()
-    for _, Descendant in ipairs(Object:GetDescendants()) do
-        if Descendant:IsA("TextLabel") then
-            TweenService:Create(Descendant, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    -- Insert Notification into List
+    table.insert(NotificationList, NotificationFrame)
+    AnimateNotifications()
+
+    -- Auto-destroy After Duration
+    task.delay(Duration, function()
+        for i, Notif in pairs(NotificationList) do
+            if Notif == NotificationFrame then
+                table.remove(NotificationList, i)
+                break
+            end
         end
-    end
-    Tween.Completed:Wait()
-    Object:Destroy()
+        FadeOutNotification(NotificationFrame)
+        AnimateNotifications()
+    end)
 end
 
--- Notification Module
+-- Return Notification Functionality
 return {
     Notify = function(Properties)
-        Properties = typeof(Properties) == "table" and Properties or {}
-        local Title = Properties.Title or "Notification"
-        local Description = Properties.Description or ""
-        local Duration = Properties.Duration or 5
-
-        -- Calculate Height
-        local Height = 40 -- Base height
-        if Description ~= "" then
-            local TextSize = TextService:GetTextSize(Description, 14, Enum.Font.Gotham, Vector2.new(Container.AbsoluteSize.X - Padding * 2, math.huge))
-            Height += TextSize.Y + 10
-        end
-
-        -- Create Notification
-        local NewNotification = Round2px()
-        NewNotification.Size = UDim2.new(1, 0, 0, Height)
-        NewNotification.Position = UDim2.new(-1, 20, 0, CalculateBounds().Y + Padding * #CachedObjects)
-
-        -- Add Title
-        local TitleObj = TitleLabel(Title)
-        TitleObj.Size = UDim2.new(1, -20, 0, 30)
-        TitleObj.Position = UDim2.new(0, 10, 0, 5)
-        TitleObj.Parent = NewNotification
-
-        -- Add Description
-        if Description ~= "" then
-            local DescObj = DescriptionLabel(Description)
-            DescObj.Size = UDim2.new(1, -20, 0, Height - 50)
-            DescObj.Position = UDim2.new(0, 10, 0, 35)
-            DescObj.Parent = NewNotification
-        end
-
-        -- Add Shadow
-        local Shadow = Shadow2px()
-        Shadow.Parent = NewNotification
-
-        -- Parent and Animate
-        NewNotification.Parent = Container
-        table.insert(CachedObjects, NewNotification)
-
-        -- Move to Visible Position
-        local Tween = TweenService:Create(NewNotification, TweenInfo.new(TweenTime, TweenStyle, TweenDirection), {
-            Position = UDim2.new(0, Padding, 0, CalculateBounds().Y + Padding * (#CachedObjects - 1))
-        })
-        Tween:Play()
-
-        -- Fade Out After Duration
-        coroutine.wrap(FadeOutAfter)(NewNotification, Duration)
-    end,
+        CreateNotification(Properties.Title or "Notification", Properties.Description or "", Properties.Duration or 5)
+    end
 }
