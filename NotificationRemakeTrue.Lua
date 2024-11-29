@@ -16,11 +16,12 @@ Container.Name = "Container"
 Container.Position = UDim2.new(0, 20, 0.5, -20)
 Container.Size = UDim2.new(0, 300, 1, 0) -- Full vertical space
 Container.BackgroundTransparency = 1
-Container.ClipsDescendants = true
+Container.ClipsDescendants = true -- Hide overflowing notifications
 Container.Parent = NotifGui
 
 local Padding = 10 -- Spacing between notifications
 local InstructionObjects = {}
+local MaxVisible = 6 -- Maximum number of notifications on-screen
 
 -- Utility Functions
 local function CreateImage(ID)
@@ -82,13 +83,21 @@ end
 -- Update notification positions dynamically
 local function UpdateNotificationPositions()
     local TotalHeight = 0
-    for _, Object in ipairs(InstructionObjects) do
+    for i, Object in ipairs(InstructionObjects) do
         local Label = Object[1]
-        local Delta = Object[2]
-        local Done = Object[3]
-        if not Done then
-            -- Set position dynamically based on current stack
-            local TargetPos = UDim2.new(0, 0, 0, TotalHeight + Padding * #InstructionObjects)
+        if i > MaxVisible then
+            -- Remove notifications that exceed the maximum
+            table.remove(InstructionObjects, i)
+            TweenService:Create(Label, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0, 20, 0, 100),
+                BackgroundTransparency = 1,
+            }):Play()
+            task.delay(0.5, function()
+                Label:Destroy()
+            end)
+        else
+            -- Update positions for visible notifications
+            local TargetPos = UDim2.new(0, 0, 0, TotalHeight)
             TweenService:Create(Label, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
                 Position = TargetPos,
             }):Play()
