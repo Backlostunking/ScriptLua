@@ -7,6 +7,12 @@ Notifications.Notify({
     Description = "This is Notification!",
     Duration = 5
 })
+
+Notifications.Notify({
+    Title = "Info",
+    Description = "You can now stack up to 6 notifications!",
+    Duration = 5
+})
 --]]
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -17,14 +23,17 @@ local Player = game:GetService("Players").LocalPlayer
 -- Create ScreenGui
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "YNotifO"
+NotifGui.IgnoreGuiInset = true -- Ignore system UI inset
 NotifGui.Parent = RunService:IsStudio() and Player.PlayerGui or game:GetService("CoreGui")
 
 -- Container for Notifications
 local Container = Instance.new("Frame")
 Container.Name = "Container"
-Container.Position = UDim2.new(0, 20, 0.5, -20)
-Container.Size = UDim2.new(0, 350, 0.5, 0)
+Container.AnchorPoint = Vector2.new(1, 1) -- Align notifications to the bottom-right
+Container.Position = UDim2.new(1, -20, 1, -20) -- Bottom-right corner with margin
+Container.Size = UDim2.new(0.3, 0, 0.8, 0) -- Max width 30%, height 80%
 Container.BackgroundTransparency = 1
+Container.ClipsDescendants = true
 Container.Parent = NotifGui
 
 -- Constants
@@ -36,12 +45,11 @@ local TweenDirection = Enum.EasingDirection.Out
 
 -- Utility Functions
 local function CalculateBounds()
-    local X, Y = 0, 0
+    local Y = 0
     for _, Object in ipairs(CachedObjects) do
-        X += Object.AbsoluteSize.X
-        Y += Object.AbsoluteSize.Y
+        Y += Object.AbsoluteSize.Y + Padding
     end
-    return {X = X, Y = Y}
+    return Y
 end
 
 local function Round2px()
@@ -71,7 +79,7 @@ local function TitleLabel(Text)
     local Title = Instance.new("TextLabel")
     Title.Text = Text
     Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18
+    Title.TextSize = 16 -- Reduced for compact design
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.BackgroundTransparency = 1
     Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -82,7 +90,7 @@ local function DescriptionLabel(Text)
     local Desc = Instance.new("TextLabel")
     Desc.Text = Text
     Desc.Font = Enum.Font.Gotham
-    Desc.TextSize = 14
+    Desc.TextSize = 13 -- Reduced for compact design
     Desc.TextColor3 = Color3.fromRGB(200, 200, 200)
     Desc.BackgroundTransparency = 1
     Desc.TextXAlignment = Enum.TextXAlignment.Left
@@ -92,7 +100,7 @@ end
 
 -- Fade-Out Effect
 local function FadeOutAfter(Object, Duration)
-    wait(Duration)
+    task.wait(Duration)
     local Tween = TweenService:Create(Object, TweenInfo.new(0.5, TweenStyle, TweenDirection), {
         BackgroundTransparency = 1
     })
@@ -117,26 +125,27 @@ return {
         -- Calculate Height
         local Height = 40 -- Base height
         if Description ~= "" then
-            local TextSize = TextService:GetTextSize(Description, 14, Enum.Font.Gotham, Vector2.new(Container.AbsoluteSize.X - Padding * 2, math.huge))
+            local TextSize = TextService:GetTextSize(Description, 13, Enum.Font.Gotham, Vector2.new(Container.AbsoluteSize.X - Padding * 2, math.huge))
             Height += TextSize.Y + 10
         end
 
         -- Create Notification
         local NewNotification = Round2px()
         NewNotification.Size = UDim2.new(1, 0, 0, Height)
-        NewNotification.Position = UDim2.new(-1, 20, 0, CalculateBounds().Y + Padding * #CachedObjects)
+        NewNotification.Position = UDim2.new(1, 0, 1, -CalculateBounds() - Padding * (#CachedObjects + 1))
+        NewNotification.AnchorPoint = Vector2.new(1, 1) -- Align to bottom-right
 
         -- Add Title
         local TitleObj = TitleLabel(Title)
-        TitleObj.Size = UDim2.new(1, -20, 0, 30)
+        TitleObj.Size = UDim2.new(1, -20, 0, 20)
         TitleObj.Position = UDim2.new(0, 10, 0, 5)
         TitleObj.Parent = NewNotification
 
         -- Add Description
         if Description ~= "" then
             local DescObj = DescriptionLabel(Description)
-            DescObj.Size = UDim2.new(1, -20, 0, Height - 50)
-            DescObj.Position = UDim2.new(0, 10, 0, 35)
+            DescObj.Size = UDim2.new(1, -20, 0, Height - 30)
+            DescObj.Position = UDim2.new(0, 10, 0, 25)
             DescObj.Parent = NewNotification
         end
 
@@ -150,7 +159,7 @@ return {
 
         -- Move to Visible Position
         local Tween = TweenService:Create(NewNotification, TweenInfo.new(TweenTime, TweenStyle, TweenDirection), {
-            Position = UDim2.new(0, Padding, 0, CalculateBounds().Y + Padding * (#CachedObjects - 1))
+            Position = UDim2.new(1, 0, 1, -CalculateBounds())
         })
         Tween:Play()
 
