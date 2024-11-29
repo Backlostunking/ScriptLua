@@ -13,9 +13,10 @@ NotifGui.Parent = RunService:IsStudio() and Player.PlayerGui or game:GetService(
 
 local Container = Instance.new("Frame")
 Container.Name = "Container"
-Container.Position = UDim2.new(0, 20, 0.5, -20)
-Container.Size = UDim2.new(0, 300, 0.5, 0)
+Container.Position = UDim2.new(0, 20, 0.5, 0)
+Container.Size = UDim2.new(0, 300, 1, 0) -- Full vertical space for infinite stacking
 Container.BackgroundTransparency = 1
+Container.ClipsDescendants = true -- Ensures notifications don't overflow the screen
 Container.Parent = NotifGui
 
 -- Utility Functions
@@ -74,15 +75,26 @@ end
 -- Notification List
 local Notifications = {}
 
--- Update notification positions
+-- Update notification positions dynamically
 local function UpdateNotificationPositions()
     local TotalHeight = 0
-    for _, Frame in ipairs(Notifications) do
-        local TargetPosition = UDim2.new(0, 20, 0.5, -20 - TotalHeight)
-        TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            Position = TargetPosition,
-        }):Play()
-        TotalHeight = TotalHeight + Frame.AbsoluteSize.Y + 10
+    local MaxHeight = Container.AbsoluteSize.Y
+
+    for i, Frame in ipairs(Notifications) do
+        if TotalHeight + Frame.AbsoluteSize.Y + 10 > MaxHeight then
+            -- If out of visible area, move off-screen or hide
+            TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0, 20, 0, MaxHeight + 50),
+                Transparency = 1,
+            }):Play()
+        else
+            -- Position notifications dynamically
+            local TargetPosition = UDim2.new(0, 20, 0, TotalHeight)
+            TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                Position = TargetPosition,
+            }):Play()
+            TotalHeight = TotalHeight + Frame.AbsoluteSize.Y + 10
+        end
     end
 end
 
@@ -100,7 +112,7 @@ function NotificationLib.Notify(Properties)
     -- Create main notification frame
     local Frame = CreateBackground()
     Frame.Size = UDim2.new(1, 0, 0, Height)
-    Frame.Position = UDim2.new(0, 20, 0.5, 0) -- Temporary position for animation
+    Frame.Position = UDim2.new(0, 20, 0, 0) -- Temporary position for animation
     Frame.Parent = Container
 
     -- Add shadow
@@ -136,7 +148,7 @@ function NotificationLib.Notify(Properties)
     -- Tween out after duration
     task.delay(Duration, function()
         local TweenOut = TweenService:Create(Frame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 20, 0.5, 100),
+            Position = UDim2.new(0, 20, 0, -Height - 50), -- Fade out below screen
             Transparency = 1,
         })
         TweenOut:Play()
