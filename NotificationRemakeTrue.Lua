@@ -1,4 +1,3 @@
-rework my notifications position to good and making size of notification good for mobile!
 
 --[[
 Here How You Can Use My Notifications Reamke From Nameless admin!
