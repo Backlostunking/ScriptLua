@@ -1,3 +1,13 @@
+--[[
+Here How You Can Use My Notifications Reamke From Nameless admin!
+local Notifications = loadstring(game:HttpGet("https://raw.githubusercontent.com/Backlostunking/ScriptLua/refs/heads/main/NotificationRemakeTrue.Lua"))()
+
+Notifications.Notify({
+    Title = "🔥 Welcome!",
+    Description = "This is Notification!",
+    Duration = 5
+})
+--]]
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
