@@ -9,19 +9,19 @@ local NotificationLib = {}
 -- Main GUI Setup
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "EpicNotifGui"
-NotifGui.Parent = RunService:IsStudio() and Player.PlayerGui or game:GetService("CoreGui")
+NotifGui.Parent = RunService:IsStudio() and game:GetService("CoreGui")
 
 local Container = Instance.new("Frame")
 Container.Name = "Container"
 Container.Position = UDim2.new(0, 20, 0.5, -20)
 Container.Size = UDim2.new(0, 300, 1, 0) -- Full vertical space
 Container.BackgroundTransparency = 1
-Container.ClipsDescendants = true -- Hide overflowing notifications
+Container.ClipsDescendants = true
 Container.Parent = NotifGui
 
 local Padding = 10 -- Spacing between notifications
+local MaxVisibleNotifications = 6 -- Limit to 6 visible notifications
 local InstructionObjects = {}
-local MaxVisible = 6 -- Maximum number of notifications on-screen
 
 -- Utility Functions
 local function CreateImage(ID)
@@ -80,29 +80,44 @@ local function DescriptionLabel(Text)
     return CreateLabel(Text, DescriptionSettings.Font, DescriptionSettings.Size)
 end
 
+-- Remove the oldest notification
+local function RemoveOldestNotification()
+    if #InstructionObjects > MaxVisibleNotifications then
+        local Oldest = InstructionObjects[1]
+        table.remove(InstructionObjects, 1)
+
+        -- Tween the oldest notification out
+        local TweenOut = TweenService:Create(Oldest[1], TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 20, 0.5, -50), -- Slide out of view
+            BackgroundTransparency = 1,
+        })
+        TweenOut:Play()
+
+        for _, Descendant in ipairs(Oldest[1]:GetDescendants()) do
+            if Descendant:IsA("TextLabel") or Descendant:IsA("ImageLabel") then
+                TweenService:Create(Descendant, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                    TextTransparency = 1,
+                    ImageTransparency = 1,
+                }):Play()
+            end
+        end
+
+        TweenOut.Completed:Connect(function()
+            Oldest[1]:Destroy()
+        end)
+    end
+end
+
 -- Update notification positions dynamically
 local function UpdateNotificationPositions()
     local TotalHeight = 0
-    for i, Object in ipairs(InstructionObjects) do
+    for _, Object in ipairs(InstructionObjects) do
         local Label = Object[1]
-        if i > MaxVisible then
-            -- Remove notifications that exceed the maximum
-            table.remove(InstructionObjects, i)
-            TweenService:Create(Label, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                Position = UDim2.new(0, 20, 0, 100),
-                BackgroundTransparency = 1,
-            }):Play()
-            task.delay(0.5, function()
-                Label:Destroy()
-            end)
-        else
-            -- Update positions for visible notifications
-            local TargetPos = UDim2.new(0, 0, 0, TotalHeight)
-            TweenService:Create(Label, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                Position = TargetPos,
-            }):Play()
-            TotalHeight = TotalHeight + Label.AbsoluteSize.Y + Padding
-        end
+        local TargetPos = UDim2.new(0, 0, 0, TotalHeight)
+        TweenService:Create(Label, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Position = TargetPos,
+        }):Play()
+        TotalHeight = TotalHeight + Label.AbsoluteSize.Y + Padding
     end
 end
 
@@ -145,7 +160,7 @@ function NotificationLib.Notify(Properties)
     -- Create notification frame
     local NewLabel = CreateBackground()
     NewLabel.Size = UDim2.new(1, 0, 0, TotalHeight)
-    NewLabel.Position = UDim2.new(-1, 20, 0, 0) -- Off-screen for animation
+    NewLabel.Position = UDim2.new(0, 20, 0.5, 0) -- Temporary position for animation
     NewLabel.Parent = Container
 
     -- Add shadow
@@ -169,6 +184,7 @@ function NotificationLib.Notify(Properties)
 
     -- Insert into active notifications
     table.insert(InstructionObjects, {NewLabel, 0, false})
+    RemoveOldestNotification() -- Check if we need to remove any old notifications
     UpdateNotificationPositions()
 
     -- Fade out after duration
