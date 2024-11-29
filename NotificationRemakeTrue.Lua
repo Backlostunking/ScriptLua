@@ -1,160 +1,142 @@
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
+local Player = game:GetService("Players").LocalPlayer
 
-local NotificationLib = {}
-
--- GUI Setup
+-- Create Notification GUI
 local NotifGui = Instance.new("ScreenGui")
-NotifGui.Name = "FireNotifGui"
+NotifGui.Name = "FireNotifLibrary"
 NotifGui.Parent = RunService:IsStudio() and Player.PlayerGui or game:GetService("CoreGui")
 
 local Container = Instance.new("Frame")
 Container.Name = "Container"
 Container.Position = UDim2.new(0, 20, 0.5, -20)
-Container.Size = UDim2.new(0, 350, 1, 0) -- Full vertical space
+Container.Size = UDim2.new(0, 350, 0.5, 0)
 Container.BackgroundTransparency = 1
-Container.ClipsDescendants = true
 Container.Parent = NotifGui
 
-local Padding = 10 -- Spacing between notifications
-local Notifications = {}
-
--- Utility Functions
-local function CreateRoundedBackground()
+-- Helper Functions
+local function RoundFrame()
     local Frame = Instance.new("Frame")
-    Frame.BackgroundTransparency = 0.2
-    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Frame.Size = UDim2.new(1, 0, 0, 50)
-    Frame.BorderSizePixel = 0
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = Frame
-
+    Frame.BackgroundTransparency = 1
+    local RoundImage = Instance.new("ImageLabel")
+    RoundImage.Image = "http://www.roblox.com/asset/?id=5761488251"
+    RoundImage.ScaleType = Enum.ScaleType.Slice
+    RoundImage.SliceCenter = Rect.new(2, 2, 298, 298)
+    RoundImage.ImageColor3 = Color3.fromRGB(25, 25, 35)
+    RoundImage.ImageTransparency = 0.1
+    RoundImage.Size = UDim2.new(1, 0, 1, 0)
+    RoundImage.BackgroundTransparency = 1
+    RoundImage.Parent = Frame
     return Frame
 end
 
-local function CreateShadow()
+local function ShadowEffect()
     local Shadow = Instance.new("ImageLabel")
-    Shadow.Image = "rbxassetid://5761498316"
-    Shadow.BackgroundTransparency = 1
+    Shadow.Image = "http://www.roblox.com/asset/?id=5761498316"
     Shadow.ScaleType = Enum.ScaleType.Slice
     Shadow.SliceCenter = Rect.new(17, 17, 283, 283)
-    Shadow.Size = UDim2.new(1, 20, 1, 20)
-    Shadow.Position = UDim2.new(0, -10, 0, -10)
+    Shadow.Size = UDim2.fromScale(1, 1) + UDim2.fromOffset(40, 40)
+    Shadow.Position = -UDim2.fromOffset(20, 20)
     Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    Shadow.ImageTransparency = 0.5
+    Shadow.ImageTransparency = 0.6
+    Shadow.BackgroundTransparency = 1
     return Shadow
 end
 
-local function CreateLabel(Text, Font, TextSize, Color)
-    local Label = Instance.new("TextLabel")
-    Label.Text = Text
-    Label.Font = Font
-    Label.TextSize = TextSize
-    Label.BackgroundTransparency = 1
-    Label.TextColor3 = Color or Color3.fromRGB(255, 255, 255)
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.RichText = true
-    return Label
-end
+-- Configuration
+local Padding = 10
+local TweenTime = 0.8
+local TweenStyle = Enum.EasingStyle.Quint
+local TweenDirection = Enum.EasingDirection.Out
 
-local function FadeOut(Frame, Duration)
-    task.delay(Duration, function()
-        local FadeTween = TweenService:Create(Frame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-            BackgroundTransparency = 1,
-            Position = Frame.Position + UDim2.new(0, 0, 0, 50),
-        })
-        FadeTween:Play()
+-- Notification Management
+local NotificationQueue = {}
+local LastTick = tick()
 
-        for _, Descendant in ipairs(Frame:GetDescendants()) do
-            if Descendant:IsA("TextLabel") or Descendant:IsA("ImageLabel") then
-                TweenService:Create(Descendant, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-                    TextTransparency = 1,
-                    ImageTransparency = 1,
-                }):Play()
+local function UpdateNotifications()
+    local DeltaTime = tick() - LastTick
+    local CurrentY = 0
+    for _, Notification in ipairs(NotificationQueue) do
+        local Label, Progress, Done = Notification[1], Notification[2], Notification[3]
+        if not Done then
+            if Progress < TweenTime then
+                Notification[2] = math.clamp(Progress + DeltaTime, 0, TweenTime)
+            else
+                Notification[3] = true
             end
         end
-
-        FadeTween.Completed:Connect(function()
-            Frame:Destroy()
-            table.remove(Notifications, table.find(Notifications, Frame))
-            NotificationLib.UpdatePositions()
-        end)
-    end)
-end
-
--- Update all notification positions
-function NotificationLib.UpdatePositions()
-    local TotalHeight = 0
-    for _, Frame in ipairs(Notifications) do
-        local TargetPos = UDim2.new(0, 0, 0, TotalHeight + Padding)
-        TweenService:Create(Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            Position = TargetPos,
-        }):Play()
-        TotalHeight = TotalHeight + Frame.AbsoluteSize.Y + Padding
+        local NewPos = UDim2.new(0, Padding, 0, CurrentY + Padding)
+        Label.Position = Label.Position:Lerp(NewPos, TweenService:GetValue(Progress / TweenTime, TweenStyle, TweenDirection))
+        CurrentY = CurrentY + Label.AbsoluteSize.Y + Padding
     end
+    LastTick = tick()
 end
 
--- Main Notification Function
-function NotificationLib.Notify(Properties)
+RunService:BindToRenderStep("NotificationUpdater", Enum.RenderPriority.Last.Value, UpdateNotifications)
+
+-- Notification Creation
+local function CreateNotification(Properties)
     local Title = Properties.Title or "Notification"
     local Description = Properties.Description or ""
     local Duration = Properties.Duration or 5
-    local Icon = Properties.Icon -- Optional icon
-    local Color = Properties.Color or Color3.fromRGB(255, 255, 255)
 
-    -- Calculate height dynamically
-    local TotalHeight = 50 -- Base height
-    local TextSize = TextService:GetTextSize(Description, 14, Enum.Font.Gotham, Vector2.new(300, math.huge))
-    if Description ~= "" then
-        TotalHeight = TotalHeight + TextSize.Y + 10
-    end
+    -- Calculate Size
+    local TextBounds = TextService:GetTextSize(Description, 16, Enum.Font.Gotham, Vector2.new(Container.AbsoluteSize.X - Padding * 2, math.huge))
+    local TotalHeight = 40 + TextBounds.Y + Padding
 
     -- Create Notification Frame
-    local Frame = CreateRoundedBackground()
-    Frame.Size = UDim2.new(1, 0, 0, TotalHeight)
-    Frame.Position = UDim2.new(0, 0, 0, -TotalHeight) -- Start offscreen
-    Frame.Parent = Container
+    local Notification = RoundFrame()
+    Notification.Size = UDim2.new(0, Container.AbsoluteSize.X - Padding * 2, 0, TotalHeight)
+    Notification.Position = UDim2.new(-1, 0, 0, Padding)
+    Notification.ClipsDescendants = true
 
     -- Add Shadow
-    local Shadow = CreateShadow()
-    Shadow.Parent = Frame
-
-    -- Add Icon if provided
-    if Icon then
-        local IconImage = Instance.new("ImageLabel")
-        IconImage.Image = Icon
-        IconImage.Size = UDim2.new(0, 40, 0, 40)
-        IconImage.Position = UDim2.new(0, 10, 0, 5)
-        IconImage.BackgroundTransparency = 1
-        IconImage.Parent = Frame
-    end
+    ShadowEffect().Parent = Notification
 
     -- Add Title
-    local TitleLabel = CreateLabel(Title, Enum.Font.GothamBold, 16, Color)
-    TitleLabel.Position = UDim2.new(0, Icon and 60 or 10, 0, 5)
-    TitleLabel.Size = UDim2.new(1, -(Icon and 70 or 20), 0, 20)
-    TitleLabel.Parent = Frame
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(1, -Padding * 2, 0, 20)
+    TitleLabel.Position = UDim2.fromOffset(Padding, Padding)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.Text = Title
+    TitleLabel.TextSize = 16
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = Notification
 
     -- Add Description
-    if Description ~= "" then
-        local DescLabel = CreateLabel(Description, Enum.Font.Gotham, 14)
-        DescLabel.Position = UDim2.new(0, Icon and 60 or 10, 0, 30)
-        DescLabel.Size = UDim2.new(1, -(Icon and 70 or 20), 0, TextSize.Y)
-        DescLabel.TextWrapped = true
-        DescLabel.Parent = Frame
-    end
+    local DescriptionLabel = Instance.new("TextLabel")
+    DescriptionLabel.Size = UDim2.new(1, -Padding * 2, 1, -40)
+    DescriptionLabel.Position = UDim2.new(0, Padding, 0, 30)
+    DescriptionLabel.BackgroundTransparency = 1
+    DescriptionLabel.Font = Enum.Font.Gotham
+    DescriptionLabel.Text = Description
+    DescriptionLabel.TextSize = 14
+    DescriptionLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    DescriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+    DescriptionLabel.TextYAlignment = Enum.TextYAlignment.Top
+    DescriptionLabel.TextWrapped = true
+    DescriptionLabel.Parent = Notification
 
-    -- Add to active notifications
-    table.insert(Notifications, Frame)
-    NotificationLib.UpdatePositions()
+    Notification.Parent = Container
+    table.insert(NotificationQueue, {Notification, 0, false})
 
-    -- Fade out after duration
-    FadeOut(Frame, Duration)
+    -- Auto Remove
+    task.delay(Duration, function()
+        if Notification.Parent then
+            TweenService:Create(Notification, TweenInfo.new(0.5, TweenStyle, TweenDirection), {BackgroundTransparency = 1}):Play()
+            task.delay(0.5, function()
+                Notification:Destroy()
+            end)
+        end
+    end)
 end
 
-return NotificationLib
+-- Return Notify Function
+return {
+    Notify = function(Properties)
+        CreateNotification(Properties)
+    end
+}
