@@ -1,3 +1,5 @@
+rework my notifications position to good and making size of notification good for mobile!
+
 --[[
 Here How You Can Use My Notifications Reamke From Nameless admin!
 local Notifications = loadstring(game:HttpGet("https://raw.githubusercontent.com/Backlostunking/ScriptLua/refs/heads/main/NotificationRemakeTrue.Lua"))()
@@ -17,17 +19,14 @@ local Player = game:GetService("Players").LocalPlayer
 -- Create ScreenGui
 local NotifGui = Instance.new("ScreenGui")
 NotifGui.Name = "YNotifO"
-NotifGui.IgnoreGuiInset = true -- Ignore top bar inset
 NotifGui.Parent = RunService:IsStudio() and Player.PlayerGui or game:GetService("CoreGui")
 
 -- Container for Notifications
 local Container = Instance.new("Frame")
 Container.Name = "Container"
-Container.AnchorPoint = Vector2.new(0.5, 1) -- Center horizontally, align at bottom
-Container.Position = UDim2.new(0.5, 0, 1, -20) -- Bottom center with margin
-Container.Size = UDim2.new(1, -40, 0.5, 0) -- Full width minus margin, half height max
+Container.Position = UDim2.new(0, 20, 0.5, -20)
+Container.Size = UDim2.new(0, 350, 0.5, 0)
 Container.BackgroundTransparency = 1
-Container.ClipsDescendants = true
 Container.Parent = NotifGui
 
 -- Constants
@@ -39,11 +38,12 @@ local TweenDirection = Enum.EasingDirection.Out
 
 -- Utility Functions
 local function CalculateBounds()
-    local Y = 0
+    local X, Y = 0, 0
     for _, Object in ipairs(CachedObjects) do
-        Y += Object.AbsoluteSize.Y + Padding
+        X += Object.AbsoluteSize.X
+        Y += Object.AbsoluteSize.Y
     end
-    return Y
+    return {X = X, Y = Y}
 end
 
 local function Round2px()
@@ -94,7 +94,7 @@ end
 
 -- Fade-Out Effect
 local function FadeOutAfter(Object, Duration)
-    task.wait(Duration)
+    wait(Duration)
     local Tween = TweenService:Create(Object, TweenInfo.new(0.5, TweenStyle, TweenDirection), {
         BackgroundTransparency = 1
     })
@@ -117,7 +117,7 @@ return {
         local Duration = Properties.Duration or 5
 
         -- Calculate Height
-        local Height = 50 -- Base height
+        local Height = 40 -- Base height
         if Description ~= "" then
             local TextSize = TextService:GetTextSize(Description, 14, Enum.Font.Gotham, Vector2.new(Container.AbsoluteSize.X - Padding * 2, math.huge))
             Height += TextSize.Y + 10
@@ -125,9 +125,8 @@ return {
 
         -- Create Notification
         local NewNotification = Round2px()
-        NewNotification.Size = UDim2.new(1, -Padding * 2, 0, Height) -- Full width with padding
-        NewNotification.Position = UDim2.new(0.5, 0, 1, CalculateBounds())
-        NewNotification.AnchorPoint = Vector2.new(0.5, 1)
+        NewNotification.Size = UDim2.new(1, 0, 0, Height)
+        NewNotification.Position = UDim2.new(-1, 20, 0, CalculateBounds().Y + Padding * #CachedObjects)
 
         -- Add Title
         local TitleObj = TitleLabel(Title)
@@ -153,7 +152,7 @@ return {
 
         -- Move to Visible Position
         local Tween = TweenService:Create(NewNotification, TweenInfo.new(TweenTime, TweenStyle, TweenDirection), {
-            Position = UDim2.new(0.5, 0, 1, -CalculateBounds())
+            Position = UDim2.new(0, Padding, 0, CalculateBounds().Y + Padding * (#CachedObjects - 1))
         })
         Tween:Play()
 
