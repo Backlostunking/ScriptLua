@@ -537,7 +537,7 @@ function OrionLib:MakeWindow(WindowConfig)
 	{
 		BackgroundTransparency = 0, 
 		Parent = Orion, 
-		Text =  "Open Ui",
+		Text =  "Show",
 		TextScaled = true,
 		TextSize = 14,
 		TextColor3 = Color3.new(0, 0, 0),
@@ -1953,8 +1953,6 @@ local Configs_HUB = {
   Corner_Radius = UDim.new(0, 4),
   Text_Font = Enum.Font.FredokaOne
 }
-
-local TweenService = game:GetService("TweenService")
 
 local function Create(instance, parent, props)
   local new = Instance.new(instance, parent)
